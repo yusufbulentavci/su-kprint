@@ -81,6 +81,29 @@ public class QuestionAssignmentRepository {
     }
 
     /**
+     * Finds all assignments
+     */
+    public List<QuestionAssignment> findAll() throws SQLException {
+        String sql = "SELECT id, placement_id, student_id, room_code, exam_code, " +
+            "curriculum_language, tarama_question_id, session_key, assigned_at " +
+            "FROM kexamprint.question_assignments " +
+            "ORDER BY placement_id";
+
+        List<QuestionAssignment> assignments = new ArrayList<>();
+
+        try (Connection conn = dbConfig.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                assignments.add(mapResultSet(rs));
+            }
+        }
+
+        return assignments;
+    }
+
+    /**
      * Finds assignment by placement_id
      */
     public QuestionAssignment findByPlacementId(Integer placementId) throws SQLException {

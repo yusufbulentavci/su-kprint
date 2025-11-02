@@ -68,6 +68,9 @@ public class QuestionAssignmentService {
      * - N=0: ERROR (should be caught in validation)
      * - N=1,2: Use all questions (no reserve)
      * - N>=3: Reserve some questions, use N-reserve
+     *
+     * Note: With round-robin, we cycle through questions, so we don't need
+     * questionsToUse >= studentCount. Even 1 question can serve all students.
      */
     private int calculateQuestionsToUse(int totalQuestions, int studentCount) {
         if (totalQuestions < MIN_QUESTIONS_FOR_RESERVE) {
@@ -78,11 +81,11 @@ public class QuestionAssignmentService {
         // Reserve questions
         int questionsToUse = totalQuestions - questionsToReserve;
 
-        // Ensure we have at least enough for students (should be caught in validation)
-        if (questionsToUse < studentCount) {
+        // Ensure we have at least 1 question to use
+        if (questionsToUse < 1) {
             throw new IllegalStateException(
-                String.format("After reserve, not enough questions: total=%d, reserve=%d, students=%d",
-                    totalQuestions, questionsToReserve, studentCount));
+                String.format("After reserve, no questions left to use: total=%d, reserve=%d",
+                    totalQuestions, questionsToReserve));
         }
 
         return questionsToUse;

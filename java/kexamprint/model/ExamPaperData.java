@@ -15,11 +15,13 @@ public class ExamPaperData {
 
     // Header - Line 2
     private Integer paperVariantNumber;
+    private String questionId; // 6-digit unique question ID for tracking
 
     // Header - Line 3
     private String courseName;
 
     // Header - Line 4
+    private String building;
     private String roomNumber;
     private Integer seatNumber;
     private LocalDate examDate;
@@ -56,7 +58,18 @@ public class ExamPaperData {
     }
 
     public String getHeaderLine2() {
-        return paperVariantNumber != null ? paperVariantNumber.toString() : "";
+        StringBuilder sb = new StringBuilder();
+        if (paperVariantNumber != null) {
+            sb.append(paperVariantNumber.toString());
+        }
+        // Add question ID in the right top box
+        if (questionId != null && !questionId.isEmpty()) {
+            if (sb.length() > 0) {
+                sb.append("\n\n");
+            }
+            sb.append(questionId);
+        }
+        return sb.toString();
     }
 
     public String getHeaderLine3() {
@@ -65,8 +78,20 @@ public class ExamPaperData {
 
     public String getHeaderLine4() {
         StringBuilder sb = new StringBuilder();
-        if (roomNumber != null) {
-            sb.append(roomNumber).append("-").append(seatNumber);
+        // Building-Room-Seat format
+        if (building != null || roomNumber != null) {
+            if (building != null) {
+                sb.append(building);
+            }
+            if (roomNumber != null) {
+                if (sb.length() > 0) {
+                    sb.append("-");
+                }
+                sb.append(roomNumber);
+            }
+            if (seatNumber != null) {
+                sb.append("-").append(seatNumber);
+            }
         }
         sb.append("\n");
         if (examDate != null) {
@@ -108,8 +133,14 @@ public class ExamPaperData {
     public Integer getPaperVariantNumber() { return paperVariantNumber; }
     public void setPaperVariantNumber(Integer paperVariantNumber) { this.paperVariantNumber = paperVariantNumber; }
 
+    public String getQuestionId() { return questionId; }
+    public void setQuestionId(String questionId) { this.questionId = questionId; }
+
     public String getCourseName() { return courseName; }
     public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public String getBuilding() { return building; }
+    public void setBuilding(String building) { this.building = building; }
 
     public String getRoomNumber() { return roomNumber; }
     public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }

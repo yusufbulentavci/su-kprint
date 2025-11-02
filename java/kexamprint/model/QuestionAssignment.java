@@ -48,6 +48,13 @@ public class QuestionAssignment {
         this.placementId = placementId;
     }
 
+    /**
+     * Alias for getPlacementId() - more semantic for announcement-based lookups
+     */
+    public Integer getAnnouncementId() {
+        return placementId;
+    }
+
     public Integer getStudentId() {
         return studentId;
     }

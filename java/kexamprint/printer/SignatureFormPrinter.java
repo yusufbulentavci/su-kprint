@@ -62,8 +62,16 @@ public class SignatureFormPrinter extends RecurringPageDocument {
     public void addBody(PdfWriter writer, Document doc, PDPage page)
             throws DocumentException, MalformedURLException, IOException {
 
-        PdfPTable table = new PdfPTable(4);
-        table.setWidths(new float[] { 2, 1, 2, 1 });
+        // For oral exams: 2 columns (no seat numbers)
+        // For written exams: 4 columns (name, seat, name, seat)
+        PdfPTable table;
+        if (data.isOralExam()) {
+            table = new PdfPTable(2);
+            table.setWidths(new float[] { 1, 1 });
+        } else {
+            table = new PdfPTable(4);
+            table.setWidths(new float[] { 2, 1, 2, 1 });
+        }
         table.setWidthPercentage(100);
 
         boolean toggle = false;
@@ -82,13 +90,16 @@ public class SignatureFormPrinter extends RecurringPageDocument {
             cell.setPadding(5);
             table.addCell(cell);
 
-            // Seat number cell
-            paragraph = new Paragraph();
-            paragraph.add(student.getSeatNumber() == 0 ? "" : student.getSeatNumber().toString());
+            // Add seat number cell only for written exams
+            if (!data.isOralExam()) {
+                paragraph = new Paragraph();
+                Integer seatNum = student.getSeatNumber();
+                paragraph.add(seatNum == null || seatNum == 0 ? "" : seatNum.toString());
 
-            cell = new PdfPCell(paragraph);
-            cell.setPadding(5);
-            table.addCell(cell);
+                cell = new PdfPCell(paragraph);
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
 
             toggle = !toggle;
         }
@@ -96,7 +107,9 @@ public class SignatureFormPrinter extends RecurringPageDocument {
         // Add empty cells if odd number of students
         if (toggle) {
             table.addCell(new PdfPCell(new Paragraph("")));
-            table.addCell(new PdfPCell(new Paragraph("")));
+            if (!data.isOralExam()) {
+                table.addCell(new PdfPCell(new Paragraph("")));
+            }
         }
 
         doc.add(table);

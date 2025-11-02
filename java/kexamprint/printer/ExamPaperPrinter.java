@@ -63,14 +63,17 @@ public class ExamPaperPrinter extends RecurringPageDocument {
 
         Font bold = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
         Font font = new Font(Font.FontFamily.HELVETICA, 8, Font.NORMAL);
+        Font largeFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
 
         // Row 1
         PdfPCell cell = new PdfPCell(new Paragraph(data.getHeaderLine1(), bold));
         cell.setPadding(5);
         table.addCell(cell);
 
-        cell = new PdfPCell(new Paragraph(data.getHeaderLine2(), bold));
+        // Right top box - use larger font for question ID
+        cell = new PdfPCell(new Paragraph(data.getHeaderLine2(), largeFont));
         cell.setPadding(5);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         table.addCell(cell);
 
         // Row 2
@@ -95,10 +98,17 @@ public class ExamPaperPrinter extends RecurringPageDocument {
 
         String imagePath = data.getExamImagePath();
         if (imagePath == null || !new File(imagePath).exists()) {
-            System.err.println("Exam image not found: " + imagePath);
+            // Image missing or no assignment - just skip image, leave blank space
+            if (imagePath != null) {
+                System.err.println("WARNING: Exam image not found: " + imagePath);
+            } else {
+                System.err.println("WARNING: No question assigned");
+            }
             System.err.println("  Room: " + data.getRoomNumber() +
                              ", Seat: " + data.getSeatNumber() +
                              ", Time: " + data.getTimeSlot());
+            System.err.println("  Generating exam paper without image");
+            // Just return - exam paper will be generated with header but no image
             return;
         }
 
