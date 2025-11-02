@@ -1,4 +1,6 @@
 target/
+linked/
+output/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
