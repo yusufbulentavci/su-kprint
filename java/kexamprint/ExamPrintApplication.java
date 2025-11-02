@@ -763,28 +763,40 @@ public class ExamPrintApplication {
      */
     private int assignQuestionsForDay(DayData dayData, Integer day,
                                       Map<String, MissingQuestionInfo> missingQuestions) throws SQLException {
-        // Group announcements by session
-        Map<String, List<WrittenExamAnnouncement>> sessionGroups =
-            assignmentService.groupBySession(dayData.writtenAnnouncements);
-
         // Group questions by exam+language
         Map<String, List<TaramaQuestion>> questionGroups =
             assignmentService.groupQuestionsByExamAndLanguage(dayData.allQuestions);
 
-        // Assign questions for each session
+        // Group announcements by exam+language FIRST, then by session
+        Map<String, Map<String, List<WrittenExamAnnouncement>>> examSessionGroups = new LinkedHashMap<>();
+
+        for (WrittenExamAnnouncement announcement : dayData.writtenAnnouncements) {
+            String examKey = assignmentService.getQuestionGroupKeyForAnnouncement(announcement);
+            String sessionKey = announcement.getSessionKey();
+
+            examSessionGroups
+                .computeIfAbsent(examKey, k -> new LinkedHashMap<>())
+                .computeIfAbsent(sessionKey, k -> new ArrayList<>())
+                .add(announcement);
+        }
+
+        // Sort announcements within each group by seat number
+        for (Map<String, List<WrittenExamAnnouncement>> sessionGroups : examSessionGroups.values()) {
+            for (List<WrittenExamAnnouncement> announcements : sessionGroups.values()) {
+                announcements.sort(Comparator.comparing(WrittenExamAnnouncement::getSeatNo,
+                    Comparator.nullsLast(Comparator.naturalOrder())));
+            }
+        }
+
+        // Assign questions for each exam+language+session group
         List<QuestionAssignment> allAssignments = new ArrayList<>();
 
-        for (Map.Entry<String, List<WrittenExamAnnouncement>> entry : sessionGroups.entrySet()) {
-            String sessionKey = entry.getKey();
-            List<WrittenExamAnnouncement> sessionAnnouncements = entry.getValue();
+        for (Map.Entry<String, Map<String, List<WrittenExamAnnouncement>>> examEntry : examSessionGroups.entrySet()) {
+            String examKey = examEntry.getKey();
+            Map<String, List<WrittenExamAnnouncement>> sessionGroups = examEntry.getValue();
 
-            // Get first announcement to determine exam code and language
-            WrittenExamAnnouncement firstAnnouncement = sessionAnnouncements.get(0);
-            String examCode = firstAnnouncement.getExamCode();
-            String language = firstAnnouncement.getCurriculumLanguage();
-            String questionKey = assignmentService.getQuestionGroupKeyForAnnouncement(firstAnnouncement);
-
-            List<TaramaQuestion> availableQuestions = questionGroups.get(questionKey);
+            // Get questions for this exam+language
+            List<TaramaQuestion> availableQuestions = questionGroups.get(examKey);
 
             // Get unique question count
             Set<String> uniqueQuestions = new HashSet<>();
@@ -795,9 +807,14 @@ public class ExamPrintApplication {
             }
             int questionCount = uniqueQuestions.size();
 
+            // Parse exam code and language from key
+            String[] parts = examKey.split(":");
+            String examCode = parts[0];
+            String language = parts[1];
+
             if (questionCount == 0) {
-                // Track missing questions
-                String missingKey = examCode + ":" + language;
+                // Track missing questions for all sessions of this exam
+                String missingKey = examKey;
                 MissingQuestionInfo info = missingQuestions.get(missingKey);
                 if (info == null) {
                     info = new MissingQuestionInfo();
@@ -806,17 +823,28 @@ public class ExamPrintApplication {
                     info.availableQuestions = 0;
                     missingQuestions.put(missingKey, info);
                 }
-                info.addSession(sessionKey, sessionAnnouncements.size(), day);
+
+                // Add all sessions for this exam
+                for (Map.Entry<String, List<WrittenExamAnnouncement>> sessionEntry : sessionGroups.entrySet()) {
+                    String sessionKey = sessionEntry.getKey();
+                    List<WrittenExamAnnouncement> sessionAnnouncements = sessionEntry.getValue();
+                    info.addSession(sessionKey, sessionAnnouncements.size(), day);
+                }
                 continue;
             }
 
-            // Assign questions
-            List<QuestionAssignment> assignments = assignmentService.assignQuestionsForSession(
-                sessionAnnouncements,
-                availableQuestions
-            );
+            // Assign questions for each session of this exam
+            for (Map.Entry<String, List<WrittenExamAnnouncement>> sessionEntry : sessionGroups.entrySet()) {
+                List<WrittenExamAnnouncement> sessionAnnouncements = sessionEntry.getValue();
 
-            allAssignments.addAll(assignments);
+                // Assign questions
+                List<QuestionAssignment> assignments = assignmentService.assignQuestionsForSession(
+                    sessionAnnouncements,
+                    availableQuestions
+                );
+
+                allAssignments.addAll(assignments);
+            }
         }
 
         // Save to database
