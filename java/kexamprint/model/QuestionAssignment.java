@@ -13,6 +13,8 @@ public class QuestionAssignment {
     private String examCode;
     private String curriculumLanguage;
     private String taramaQuestionId;
+    private Integer questionId;  // real_id from tarama table
+    private Long paperCode;      // obfuscated unique code for printing
     private String sessionKey;
     private LocalDateTime assignedAt;
 
@@ -95,6 +97,22 @@ public class QuestionAssignment {
         this.taramaQuestionId = taramaQuestionId;
     }
 
+    public Integer getQuestionId() {
+        return questionId;
+    }
+
+    public void setQuestionId(Integer questionId) {
+        this.questionId = questionId;
+    }
+
+    public Long getPaperCode() {
+        return paperCode;
+    }
+
+    public void setPaperCode(Long paperCode) {
+        this.paperCode = paperCode;
+    }
+
     public String getSessionKey() {
         return sessionKey;
     }
@@ -118,6 +136,8 @@ public class QuestionAssignment {
                 ", placementId=" + placementId +
                 ", studentId=" + studentId +
                 ", taramaQuestionId='" + taramaQuestionId + '\'' +
+                ", questionId=" + questionId +
+                ", paperCode=" + paperCode +
                 ", sessionKey='" + sessionKey + '\'' +
                 '}';
     }

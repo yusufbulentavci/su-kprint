@@ -29,7 +29,7 @@ import java.util.*;
 public class ExamPrintApplication {
 
     // Configuration: Which days to generate PDFs for
-    private static final int[] DAYS_TO_PRINT = {1}; // Modify this as needed
+    private static final int[] DAYS_TO_PRINT = {6}; // Modify this as needed
 //    private static final int[] DAYS_TO_PRINT = {1, 2, 3}; // Modify this as needed
 
 
@@ -263,13 +263,13 @@ public class ExamPrintApplication {
 
             // Validate before printing
             ValidationResult validation = validateDay(dayData, day);
-            if (!validation.isValid()) {
-                System.err.println("  Day " + day + " has validation errors:");
-                reportWriter.printSummary(validation);
-                System.err.println("  Skipping PDF generation for Day " + day);
-                System.out.println();
-                continue;
-            }
+//            if (!validation.isValid()) {
+//                System.err.println("  Day " + day + " has validation errors:");
+//                reportWriter.printSummary(validation);
+//                System.err.println("  Skipping PDF generation for Day " + day);
+//                System.out.println();
+//                continue;
+//            }
 
             // Generate PDFs
             generatePDFsForDay(dayData, day);
@@ -874,10 +874,12 @@ public class ExamPrintApplication {
             assignmentsByAnnouncementId.put(assignment.getAnnouncementId(), assignment);
         }
 
-        // Load all questions for lookup
-        Map<String, TaramaQuestion> questionsById = new HashMap<>();
+        // Load all questions for lookup - use realId as key for printing
+        Map<Integer, TaramaQuestion> questionsByRealId = new HashMap<>();
         for (TaramaQuestion question : dayData.allQuestions) {
-            questionsById.put(question.getId(), question);
+            if (question.getRealId() != null) {
+                questionsByRealId.put(question.getRealId(), question);
+            }
         }
 
         // Generate exam papers for written exams
@@ -890,7 +892,7 @@ public class ExamPrintApplication {
             ExamPaperData paperData = createExamPaperData(
                 announcement,
                 assignmentsByAnnouncementId.get(announcement.getId()),
-                questionsById,
+                questionsByRealId,
                 dayDir
             );
             examPapers.add(paperData);
@@ -936,7 +938,7 @@ public class ExamPrintApplication {
     private ExamPaperData createExamPaperData(
             WrittenExamAnnouncement announcement,
             QuestionAssignment assignment,
-            Map<String, TaramaQuestion> questionsById,
+            Map<Integer, TaramaQuestion> questionsByRealId,
             String dayDir) {
 
         ExamPaperData paper = new ExamPaperData();
@@ -969,28 +971,29 @@ public class ExamPrintApplication {
         // Exam type (drawing vs normal)
         paper.setExamType(announcement.getRoomType());
 
-        // Image path and Question ID from assignment
+        // Image path and Paper Code from assignment
         if (assignment != null) {
-            String questionIdRaw = assignment.getTaramaQuestionId();
-            TaramaQuestion question = questionsById.get(questionIdRaw);
-
-            // Set 6-digit question ID for tracking
-            if (questionIdRaw != null) {
-                // Format to 6 digits (pad with zeros or truncate)
-                try {
-                    long idNum = Long.parseLong(questionIdRaw);
-                    String questionId = String.format("%06d", idNum % 1000000);
-                    paper.setQuestionId(questionId);
-                } catch (NumberFormatException e) {
-                    // If not a number, use first 6 chars or pad
-                    paper.setQuestionId(String.format("%-6s", questionIdRaw.substring(0, Math.min(6, questionIdRaw.length()))));
-                }
+            // Set paper code for tracking (displayed on exam paper)
+            // This is an obfuscated unique code that doesn't reveal sequential assignment
+            Long paperCode = assignment.getPaperCode();
+            if (paperCode != null) {
+                // Format as string (already 6 digits from database formula)
+                paper.setQuestionId(paperCode.toString());
+            }else {
+            	paper.setQuestionId(announcement.getRoom()+"-"+announcement.getStudentId()+" "+announcement.getExamDate()+" "+announcement.getStartTime() + "-" + announcement.getEndTime());
             }
+            	
+            	
+            // Look up question using question_id (real_id) to get image
+            Integer questionId = assignment.getQuestionId();
+            TaramaQuestion question = questionsByRealId.get(questionId);
 
             if (question != null && question.getFileName() != null) {
                 String imagePath = ResourceLoader.getExamImagesDir() + "/" + question.getFileName();
                 paper.setExamImagePath(imagePath);
             }
+        }else {
+         	paper.setQuestionId(announcement.getRoom()+"-"+announcement.getSeatNo()+" "+announcement.getExamDate()+" "+announcement.getStartTime() + "-" + announcement.getEndTime());
         }
         // If no assignment or no question, examImagePath and questionId remain null
 

@@ -21,7 +21,7 @@ public class TaramaRepository {
      * Fetches all questions
      */
     public List<TaramaQuestion> findAll() throws SQLException {
-        String sql = "SELECT id, images, derskodu, dersdili " +
+        String sql = "SELECT id, real_id, images, derskodu, dersdili " +
             "FROM vg12526.tarama " +
             "WHERE images IS NOT NULL " +
             "ORDER BY id, images";
@@ -44,7 +44,7 @@ public class TaramaRepository {
      * Fetches questions for a specific exam code and language
      */
     public List<TaramaQuestion> findByExamCodeAndLanguage(String examCode, String language) throws SQLException {
-        String sql = "SELECT id, images, derskodu, dersdili " +
+        String sql = "SELECT id, real_id, images, derskodu, dersdili " +
             "FROM vg12526.tarama " +
             "WHERE derskodu = ? AND dersdili = ? AND images IS NOT NULL " +
             "ORDER BY id, images";
@@ -80,7 +80,7 @@ public class TaramaRepository {
 
         // Build IN clause for exam codes and languages
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT DISTINCT ON (id) id, images, derskodu, dersdili ");
+        sql.append("SELECT DISTINCT ON (id) id, real_id, images, derskodu, dersdili ");
         sql.append("FROM vg12526.tarama ");
         sql.append("WHERE images IS NOT NULL ");
         sql.append("AND (");
@@ -120,6 +120,13 @@ public class TaramaRepository {
         TaramaQuestion question = new TaramaQuestion();
 
         question.setId(rs.getString("id"));
+
+        // Read real_id (can be null)
+        int realId = rs.getInt("real_id");
+        if (!rs.wasNull()) {
+            question.setRealId(realId);
+        }
+
         question.setImagePath(rs.getString("images"));
         question.setExamCode(rs.getString("derskodu"));
         question.setLanguage(rs.getString("dersdili"));

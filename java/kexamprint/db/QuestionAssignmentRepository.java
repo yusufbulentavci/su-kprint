@@ -85,7 +85,7 @@ public class QuestionAssignmentRepository {
      */
     public List<QuestionAssignment> findAll() throws SQLException {
         String sql = "SELECT id, placement_id, student_id, room_code, exam_code, " +
-            "curriculum_language, tarama_question_id, session_key, assigned_at " +
+            "curriculum_language, tarama_question_id, question_id, paper_code, session_key, assigned_at " +
             "FROM kexamprint.question_assignments " +
             "ORDER BY placement_id";
 
@@ -108,7 +108,7 @@ public class QuestionAssignmentRepository {
      */
     public QuestionAssignment findByPlacementId(Integer placementId) throws SQLException {
         String sql = "SELECT id, placement_id, student_id, room_code, exam_code, " +
-            "curriculum_language, tarama_question_id, session_key, assigned_at " +
+            "curriculum_language, tarama_question_id, question_id, paper_code, session_key, assigned_at " +
             "FROM kexamprint.question_assignments " +
             "WHERE placement_id = ?";
 
@@ -132,7 +132,7 @@ public class QuestionAssignmentRepository {
      */
     public List<QuestionAssignment> findBySessionKey(String sessionKey) throws SQLException {
         String sql = "SELECT id, placement_id, student_id, room_code, exam_code, " +
-            "curriculum_language, tarama_question_id, session_key, assigned_at " +
+            "curriculum_language, tarama_question_id, question_id, paper_code, session_key, assigned_at " +
             "FROM kexamprint.question_assignments " +
             "WHERE session_key = ? " +
             "ORDER BY placement_id";
@@ -197,6 +197,19 @@ public class QuestionAssignmentRepository {
         assignment.setExamCode(rs.getString("exam_code"));
         assignment.setCurriculumLanguage(rs.getString("curriculum_language"));
         assignment.setTaramaQuestionId(rs.getString("tarama_question_id"));
+
+        // Read question_id (can be null)
+        int questionId = rs.getInt("question_id");
+        if (!rs.wasNull()) {
+            assignment.setQuestionId(questionId);
+        }
+
+        // Read paper_code (can be null)
+        long paperCode = rs.getLong("paper_code");
+        if (!rs.wasNull()) {
+            assignment.setPaperCode(paperCode);
+        }
+
         assignment.setSessionKey(rs.getString("session_key"));
 
         Timestamp assignedAt = rs.getTimestamp("assigned_at");

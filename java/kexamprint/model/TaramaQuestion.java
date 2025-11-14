@@ -3,9 +3,11 @@ package kexamprint.model;
 /**
  * Represents a question from vg12526.tarama
  * Note: id is not unique - one question can have multiple image rows
+ *       realId (from real_id serial column) is unique per row
  */
 public class TaramaQuestion {
     private String id;
+    private Integer realId;    // real_id from tarama table (unique)
     private String imagePath;  // Raw path from database (e.g., "exam-1\images_1.jpg")
     private String examCode;   // derskodu
     private String language;   // dersdili
@@ -44,6 +46,14 @@ public class TaramaQuestion {
         this.id = id;
     }
 
+    public Integer getRealId() {
+        return realId;
+    }
+
+    public void setRealId(Integer realId) {
+        this.realId = realId;
+    }
+
     public String getImagePath() {
         return imagePath;
     }
@@ -72,6 +82,7 @@ public class TaramaQuestion {
     public String toString() {
         return "TaramaQuestion{" +
                 "id='" + id + '\'' +
+                ", realId=" + realId +
                 ", imagePath='" + imagePath + '\'' +
                 ", examCode='" + examCode + '\'' +
                 ", language='" + language + '\'' +
